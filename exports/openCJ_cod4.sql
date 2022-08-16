@@ -74,11 +74,13 @@ CREATE TABLE IF NOT EXISTS `checkpoints` (
   `z` int NOT NULL DEFAULT '0',
   `radius` int DEFAULT '0',
   `onGround` tinyint NOT NULL DEFAULT '0',
-  `color` char(10) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '0',
   `mapID` int NOT NULL DEFAULT '0',
   `ender` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  `elevate` tinyint NOT NULL DEFAULT '0',
+  `endShaderNum` tinyint DEFAULT NULL,
   PRIMARY KEY (`cpID`),
   KEY `mapID` (`mapID`),
+  KEY `ender` (`ender`),
   CONSTRAINT `FK_import_checkpoints_import_mapids` FOREIGN KEY (`mapID`) REFERENCES `mapids` (`mapID`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=32375 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
@@ -194,6 +196,18 @@ BEGIN
 END//
 DELIMITER ;
 
+-- Dumping structure for function openCJ_cod4.getIgnoredBy
+DELIMITER //
+CREATE FUNCTION `getIgnoredBy`(
+	`_playerID` INT
+) RETURNS varchar(1024) CHARSET ascii COLLATE ascii_bin
+BEGIN
+	DECLARE _ignoredBy VARCHAR(1024) DEFAULT NULL;
+	SELECT GROUP_CONCAT(ignoreID) INTO _ignoredBy FROM playerIgnore WHERE playerID = _playerID;
+	RETURN _ignoredBy;
+END//
+DELIMITER ;
+
 -- Dumping structure for function openCJ_cod4.getMapID
 DELIMITER //
 CREATE FUNCTION `getMapID`(
@@ -218,6 +232,7 @@ CREATE FUNCTION `getPlayerID`(
 BEGIN
 	DECLARE _playerID INT DEFAULT NULL;
 	SELECT playerID INTO _playerID FROM playerLogin WHERE uid1 = _uid1 AND uid2 = _uid2 AND uid3 = _uid3 AND uid4 = _uid4;
+	CALL setName(_playerID, _playerName);
 	RETURN _playerID;
 END//
 DELIMITER ;
@@ -263,7 +278,7 @@ CREATE TABLE IF NOT EXISTS `mapids` (
   PRIMARY KEY (`mapID`),
   UNIQUE KEY `mapname` (`mapname`),
   KEY `releaseDate` (`releaseDate`)
-) ENGINE=InnoDB AUTO_INCREMENT=1677 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1903 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
 -- Data exporting was unselected.
 
@@ -286,7 +301,21 @@ CREATE TABLE IF NOT EXISTS `mappers` (
   `name` char(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`mapperID`) USING BTREE,
   UNIQUE KEY `name` (`name`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=442 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=443 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table openCJ_cod4.messages
+CREATE TABLE IF NOT EXISTS `messages` (
+  `messageID` int NOT NULL AUTO_INCREMENT,
+  `playerID` int NOT NULL,
+  `message` varchar(1024) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `server` char(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`messageID`) USING BTREE,
+  KEY `playerID` (`playerID`) USING BTREE,
+  KEY `server` (`server`) USING BTREE,
+  CONSTRAINT `FK_messages_playerInformation` FOREIGN KEY (`playerID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -351,12 +380,25 @@ CREATE TABLE IF NOT EXISTS `original_mapids` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table openCJ_cod4.playerIgnore
+CREATE TABLE IF NOT EXISTS `playerIgnore` (
+  `playerID` int NOT NULL,
+  `ignoreID` int NOT NULL,
+  UNIQUE KEY `playerID_ignoreID` (`playerID`,`ignoreID`) USING BTREE,
+  KEY `playerID` (`playerID`) USING BTREE,
+  KEY `ignoreID` (`ignoreID`) USING BTREE,
+  CONSTRAINT `FK__playerInformation_ignore` FOREIGN KEY (`playerID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_playerIgnore_playerInformation` FOREIGN KEY (`ignoreID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table openCJ_cod4.playerInformation
 CREATE TABLE IF NOT EXISTS `playerInformation` (
   `playerID` int NOT NULL AUTO_INCREMENT,
   `playerName` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   PRIMARY KEY (`playerID`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=274 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
 -- Data exporting was unselected.
 
@@ -394,7 +436,7 @@ CREATE TABLE IF NOT EXISTS `playerRuns` (
   CONSTRAINT `FK__playerInformation` FOREIGN KEY (`playerID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_playerRuns_openCJ_cod4.checkpoints` FOREIGN KEY (`finishcpID`) REFERENCES `checkpoints` (`cpID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_playerRuns_openCJ_cod4.mapids` FOREIGN KEY (`mapID`) REFERENCES `mapids` (`mapID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=219 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=522 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
 -- Data exporting was unselected.
 
@@ -516,6 +558,17 @@ BEGIN
 	IF(_releaseDate IS NOT NULL) THEN
 		UPDATE mapids SET releaseDate = _releaseDate WHERE mapID = _mapID;
 	END IF;
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure openCJ_cod4.setName
+DELIMITER //
+CREATE PROCEDURE `setName`(
+	IN `_playerID` INT,
+	IN `_playerName` CHAR(64)
+)
+BEGIN
+	UPDATE playerInformation SET playerName = _playerName WHERE playerID = _playerID;
 END//
 DELIMITER ;
 
