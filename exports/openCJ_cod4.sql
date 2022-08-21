@@ -19,6 +19,18 @@
 CREATE DATABASE IF NOT EXISTS `openCJ_cod4` /*!40100 DEFAULT CHARACTER SET ascii COLLATE ascii_bin */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `openCJ_cod4`;
 
+-- Dumping structure for table openCJ_cod4.checkpointBrothers
+CREATE TABLE IF NOT EXISTS `checkpointBrothers` (
+  `cpID` int NOT NULL,
+  `bigBrotherID` int NOT NULL,
+  UNIQUE KEY `cpID` (`cpID`) USING BTREE,
+  KEY `bigBrotherID` (`bigBrotherID`) USING BTREE,
+  CONSTRAINT `FK__checkpoints` FOREIGN KEY (`cpID`) REFERENCES `checkpoints` (`cpID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__checkpoints_2` FOREIGN KEY (`bigBrotherID`) REFERENCES `checkpoints` (`cpID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table openCJ_cod4.checkpointConnections
 CREATE TABLE IF NOT EXISTS `checkpointConnections` (
   `cpID` int NOT NULL,
@@ -77,7 +89,7 @@ CREATE TABLE IF NOT EXISTS `checkpoints` (
   `mapID` int NOT NULL DEFAULT '0',
   `ender` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   `elevate` tinyint NOT NULL DEFAULT '0',
-  `endShaderNum` tinyint DEFAULT NULL,
+  `endShaderColor` enum('blue','cyan','green','orange','purple','red','yellow') CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   PRIMARY KEY (`cpID`),
   KEY `mapID` (`mapID`),
   KEY `ender` (`ender`),
@@ -121,13 +133,14 @@ CREATE FUNCTION `createNewAccount`(
 	`_uid1` INT,
 	`_uid2` INT,
 	`_uid3` INT,
-	`_uid4` INT
+	`_uid4` INT,
+	`_playerName` CHAR(64)
 ) RETURNS int
 BEGIN
 	DECLARE _playerID INT UNSIGNED DEFAULT NULL;
 	DECLARE _rows INT UNSIGNED DEFAULT NULL;
 	SELECT LAST_INSERT_ID(NULL) INTO _playerID; 
-	INSERT INTO playerInformation VALUES ();
+	INSERT INTO playerInformation (playerName) VALUES (_playerName);
 	SELECT LAST_INSERT_ID() INTO _playerID;
 	IF(_playerID = 0)
 	THEN
@@ -232,7 +245,6 @@ CREATE FUNCTION `getPlayerID`(
 BEGIN
 	DECLARE _playerID INT DEFAULT NULL;
 	SELECT playerID INTO _playerID FROM playerLogin WHERE uid1 = _uid1 AND uid2 = _uid2 AND uid3 = _uid3 AND uid4 = _uid4;
-	CALL setName(_playerID, _playerName);
 	RETURN _playerID;
 END//
 DELIMITER ;
@@ -278,7 +290,7 @@ CREATE TABLE IF NOT EXISTS `mapids` (
   PRIMARY KEY (`mapID`),
   UNIQUE KEY `mapname` (`mapname`),
   KEY `releaseDate` (`releaseDate`)
-) ENGINE=InnoDB AUTO_INCREMENT=1903 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=2113 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
 -- Data exporting was unselected.
 
@@ -315,68 +327,7 @@ CREATE TABLE IF NOT EXISTS `messages` (
   KEY `playerID` (`playerID`) USING BTREE,
   KEY `server` (`server`) USING BTREE,
   CONSTRAINT `FK_messages_playerInformation` FOREIGN KEY (`playerID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table openCJ_cod4.original_checkpoints
-CREATE TABLE IF NOT EXISTS `original_checkpoints` (
-  `cp_id` int NOT NULL AUTO_INCREMENT,
-  `mapid` int NOT NULL DEFAULT '-1',
-  `coordinate_x` int DEFAULT NULL,
-  `coordinate_y` int DEFAULT NULL,
-  `coordinate_z` int DEFAULT NULL,
-  `isend` tinyint NOT NULL DEFAULT '0',
-  `coordinate_x2` int DEFAULT NULL,
-  `coordinate_y2` int DEFAULT NULL,
-  `coordinate_z2` int DEFAULT NULL,
-  `radius` int DEFAULT NULL,
-  `event` char(255) DEFAULT NULL,
-  `trigger` char(255) DEFAULT NULL,
-  `type` char(255) DEFAULT NULL,
-  `ender` char(50) DEFAULT NULL,
-  `entity` char(255) DEFAULT NULL,
-  PRIMARY KEY (`cp_id`),
-  UNIQUE KEY `id` (`cp_id`),
-  KEY `mapid` (`mapid`),
-  KEY `isend` (`isend`)
-) ENGINE=InnoDB AUTO_INCREMENT=23032 DEFAULT CHARSET=latin1;
-
--- Data exporting was unselected.
-
--- Dumping structure for table openCJ_cod4.original_checkpoint_connections
-CREATE TABLE IF NOT EXISTS `original_checkpoint_connections` (
-  `mapid` int NOT NULL DEFAULT '-1',
-  `cp_id` int NOT NULL DEFAULT '-1',
-  `child_cp_id` int NOT NULL DEFAULT '-1',
-  UNIQUE KEY `combination` (`child_cp_id`,`cp_id`),
-  KEY `mapid` (`mapid`),
-  KEY `child_cp_id` (`child_cp_id`),
-  KEY `cp_id` (`cp_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- Data exporting was unselected.
-
--- Dumping structure for table openCJ_cod4.original_mapids
-CREATE TABLE IF NOT EXISTS `original_mapids` (
-  `mapid` int NOT NULL AUTO_INCREMENT,
-  `mapname` char(255) NOT NULL DEFAULT '',
-  `in_rotate` int NOT NULL DEFAULT '0',
-  `type` char(50) NOT NULL DEFAULT 'jump',
-  `fullname` char(255) NOT NULL DEFAULT 'Untitled',
-  `timelimit` tinyint unsigned NOT NULL DEFAULT '30',
-  `difficulty` tinyint unsigned DEFAULT NULL,
-  `author` char(50) DEFAULT NULL,
-  `released` date DEFAULT NULL,
-  `hidden` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`mapid`),
-  UNIQUE KEY `mapname` (`mapname`),
-  KEY `in_rotate` (`in_rotate`),
-  KEY `type` (`type`),
-  KEY `time_limit` (`timelimit`),
-  KEY `difficulty` (`difficulty`),
-  KEY `hidden` (`hidden`)
-) ENGINE=InnoDB AUTO_INCREMENT=774334 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -397,8 +348,10 @@ CREATE TABLE IF NOT EXISTS `playerIgnore` (
 CREATE TABLE IF NOT EXISTS `playerInformation` (
   `playerID` int NOT NULL AUTO_INCREMENT,
   `playerName` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
-  PRIMARY KEY (`playerID`)
-) ENGINE=InnoDB AUTO_INCREMENT=274 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+  `adminLevel` int unsigned DEFAULT '0',
+  PRIMARY KEY (`playerID`),
+  KEY `playerName` (`playerName`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
 -- Data exporting was unselected.
 
@@ -436,7 +389,7 @@ CREATE TABLE IF NOT EXISTS `playerRuns` (
   CONSTRAINT `FK__playerInformation` FOREIGN KEY (`playerID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_playerRuns_openCJ_cod4.checkpoints` FOREIGN KEY (`finishcpID`) REFERENCES `checkpoints` (`cpID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_playerRuns_openCJ_cod4.mapids` FOREIGN KEY (`mapID`) REFERENCES `mapids` (`mapID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=522 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
 -- Data exporting was unselected.
 
@@ -454,6 +407,7 @@ CREATE TABLE IF NOT EXISTS `playerSaves` (
   `nadeJumps` int NOT NULL,
   `doubleRPGs` int NOT NULL,
   `checkpointID` int DEFAULT NULL,
+  `fps` int NOT NULL,
   `flags` int NOT NULL,
   `entTargetName` varchar(50) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   `numOfEnt` int DEFAULT NULL,
@@ -462,6 +416,20 @@ CREATE TABLE IF NOT EXISTS `playerSaves` (
   KEY `saveNumber` (`saveNumber`),
   CONSTRAINT `FK_playerSaves_playerRuns` FOREIGN KEY (`runID`) REFERENCES `playerRuns` (`runID`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table openCJ_cod4.playerSettings
+CREATE TABLE IF NOT EXISTS `playerSettings` (
+  `playerID` int NOT NULL,
+  `settingID` int NOT NULL,
+  `value` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  UNIQUE KEY `playerID_settingID` (`playerID`,`settingID`),
+  KEY `value` (`value`),
+  KEY `FK_playerSettings_settings` (`settingID`),
+  CONSTRAINT `FK_playerSettings_playerInformation` FOREIGN KEY (`playerID`) REFERENCES `playerInformation` (`playerID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_playerSettings_settings` FOREIGN KEY (`settingID`) REFERENCES `settings` (`settingID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin COMMENT='Stores the configured (non-default) settings of players';
 
 -- Data exporting was unselected.
 
@@ -503,6 +471,7 @@ CREATE FUNCTION `savePosition`(
 	`_RPGShots` INT,
 	`_nadeThrows` INT,
 	`_checkpointID` INT,
+	`_fps` INT,
 	`_flags` INT,
 	`_entTargetName` CHAR(64),
 	`_numOfEnt` INT
@@ -517,7 +486,7 @@ BEGIN
 		IF _saveNumber IS NULL THEN
 			SET _saveNumber = 0;
 		END IF;
-		INSERT INTO playerSaves (saveNumber, runID, x, y, z, alpha, beta, gamma, RPGJumps, nadeJumps, doubleRPGs, checkpointID, flags, entTargetName, numOfEnt) VALUES (_saveNumber, _runID, _x, _y, _z, _alpha, _beta, _gamma, _RPGJumps, _nadeJumps, _doubleRPGs, _checkpointID, _flags, _entTargetName, _numOfEnt);
+		INSERT INTO playerSaves (saveNumber, runID, x, y, z, alpha, beta, gamma, RPGJumps, nadeJumps, doubleRPGs, checkpointID, fps, flags, entTargetName, numOfEnt) VALUES (_saveNumber, _runID, _x, _y, _z, _alpha, _beta, _gamma, _RPGJumps, _nadeJumps, _doubleRPGs, _checkpointID, _fps, _flags, _entTargetName, _numOfEnt);
 		RETURN _instanceNumber;
 	ELSE
 		RETURN NULL;
@@ -571,6 +540,33 @@ BEGIN
 	UPDATE playerInformation SET playerName = _playerName WHERE playerID = _playerID;
 END//
 DELIMITER ;
+
+-- Dumping structure for procedure openCJ_cod4.setPlayerSetting
+DELIMITER //
+CREATE PROCEDURE `setPlayerSetting`(
+	IN `_playerID` INT,
+	IN `_setting` VARCHAR(256),
+	IN `_value` VARCHAR(256)
+)
+BEGIN
+	DECLARE _settingID INT DEFAULT NULL;
+	INSERT IGNORE INTO settings (settingName) VALUES (_setting);
+	SELECT settingID INTO _settingID FROM settings WHERE settingName = _setting;
+	IF _settingID IS NOT NULL THEN
+		REPLACE INTO playerSettings (playerID, settingID, `value`) VALUES (_playerID, _settingID, _value);
+	END IF;
+END//
+DELIMITER ;
+
+-- Dumping structure for table openCJ_cod4.settings
+CREATE TABLE IF NOT EXISTS `settings` (
+  `settingID` int NOT NULL AUTO_INCREMENT,
+  `settingName` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`settingID`),
+  UNIQUE KEY `settingName` (`settingName`)
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=ascii COLLATE=ascii_bin COMMENT='List of setting ids and names';
+
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
